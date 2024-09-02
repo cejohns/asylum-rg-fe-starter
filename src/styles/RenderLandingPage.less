@@ -37,13 +37,40 @@
 
 .header-text-container h3 {
     font-family: 'beatrice regular';
-    color: @white;
+    color: black;
     font-size: 1.2rem;
 }
 
 // .graphs-section {
 //  ADD THIS BACK IN WHEN YOU HAVE THE GRAPHS SECTION
 // }
+
+.graphs-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: center;
+    margin: 5% auto;
+    width: 90%;
+    max-width: 1200px;
+    padding: 20px;
+    background-color: @secondary-color;
+    border-radius: 10px;
+}
+
+.graph {
+    width: 30%;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.graph img {
+    width: 100%;
+    height: auto;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 
 .view-more-data-btn-container {
     height: 44px;
@@ -79,6 +106,53 @@
 //      ADD THIS BACK IN WHEN YOU HAVE A BOTTOM SECTION
 // }
 
+.bottom-section {
+    text-align: center;
+    margin: 5% auto;
+    padding: 3% 0;
+    background-color: @secondary-color;
+    color: @white;
+}
+
+.bottom-section h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2%;
+}
+
+.data-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    width: 80%;
+    margin: 0 auto;
+}
+
+.first-data-point-container,
+.second-data-point-container,
+.third-data-point-container {
+    width: 28%;
+    text-align: center;
+    background-color: @main-color;
+    padding: 2%;
+    margin-bottom: 2%;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.first-data-point-container h2,
+.second-data-point-container h2,
+.third-data-point-container h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1%;
+}
+
+.first-data-point-container p,
+.second-data-point-container p,
+.third-data-point-container p {
+    font-size: 1rem;
+}
+
+
 .back-to-top {
     width: 8%;
     font-size: 1.2rem;
@@ -97,6 +171,32 @@
 .ant-btn:hover {
     border-color: @secondary-color  !important;
 }
+
+@media @mobile-small {
+    .graphs-section {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .graph {
+        width: 90%;
+        margin-bottom: 20px;
+    }
+}
+
+@media @tablet-small {
+    .graphs-section {
+        flex-direction: row;
+        width: 90%;
+    }
+
+    .graph {
+        width: 45%;
+        margin-bottom: 20px;
+    }
+}
+
 
 @media @mobile-small {
     .header {
