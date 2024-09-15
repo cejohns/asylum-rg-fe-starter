@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import CitizenshipMapAll from './Graphs/CitizenshipMapAll';
 import CitizenshipMapSingleOffice from './Graphs/CitizenshipMapSingleOffice';
 import TimeSeriesAll from './Graphs/TimeSeriesAll';
 import OfficeHeatMap from './Graphs/OfficeHeatMap';
-import Plot from 'react-plotly.js';
 import TimeSeriesSingleOffice from './Graphs/TimeSeriesSingleOffice';
 import YearLimitsSelect from './YearLimitsSelect';
 import ViewSelect from './ViewSelect';
 import axios from 'axios';
-import { resetVisualizationQuery, setVisualizationData } from '../../../state/actionCreators';
+import { resetVisualizationQuery } from '../../../state/actionCreators';
+import test_data from '../../../data/test_data.json';
 import { colors } from '../../../styles/data_vis_colors';
 import ScrollToTopOnMount from '../../../utils/scrollToTopOnMount';
 
@@ -19,51 +19,10 @@ const { background_color } = colors;
 function GraphWrapper(props) {
   const { set_view, dispatch } = props;
   let { office, view } = useParams();
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState([]); // Define data state
-  //const [yearRange, setYearRange] = useState([2015, 2022]); // Define year range state
-
   if (!view) {
     set_view('time-series');
     view = 'time-series';
   }
-
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        let result;
-        if (view === 'citizenship') {
-          result = await axios.get('https://hrf-asylum-be-b.herokuapp.com/cases/citizenshipSummary');
-        } else {
-          result = await axios.get('https://hrf-asylum-be-b.herokuapp.com/cases/fiscalSummary');
-        }
-
-        const years = result.data.yearResults.map((item) => item.fiscal_year);
-        const grantedPercentages = result.data.yearResults.map((item) => item.granted);
-
-        const formattedData = [
-          {
-            x: years,
-            y: grantedPercentages,
-            type: 'scatter',
-            mode: 'lines',
-            marker: { color: 'blue' },
-          },
-        ];
-
-        setData(formattedData); // Set the formatted data
-        dispatch(setVisualizationData(view, office || 'all', result.data)); // Dispatch with view and office
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [view, office, dispatch]);
-
   let map_to_render;
   if (!office) {
     switch (view) {
@@ -91,11 +50,65 @@ function GraphWrapper(props) {
         break;
     }
   }
+  function updateStateWithNewData(years, view, office, stateSettingCallback) {
+    /*
+          _                                                                             _
+        |                                                                                 |
+        |   Example request for once the `/summary` endpoint is up and running:           |
+        |                                                                                 |
+        |     `${url}/summary?to=2022&from=2015&office=ZLA`                               |
+        |                                                                                 |
+        |     so in axios we will say:                                                    |
+        |                                                                                 |     
+        |       axios.get(`${url}/summary`, {                                             |
+        |         params: {                                                               |
+        |           from: <year_start>,                                                   |
+        |           to: <year_end>,                                                       |
+        |           office: <office>,       [ <-- this one is optional! when    ]         |
+        |         },                        [ querying by `all offices` there's ]         |
+        |       })                          [ no `office` param in the query    ]         |
+        |                                                                                 |
+          _                                                                             _
+                                   -- Mack 
+    
+    */
 
+    if (office === 'all' || !office) {
+      axios
+        .get('https://hrf-asylum-be-b.herokuapp.com/cases/citizenshipSummary', {
+          // mock URL, can be simply replaced by `${Real_Production_URL}/summary` in prod!
+          params: {
+            from: years[0],
+            to: years[1],
+          },
+        })
+        .then(result => {
+          stateSettingCallback(view, office, test_data); // <-- `test_data` here can be simply replaced by `result.data` in prod!
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    } else {
+      axios
+        .get('https://hrf-asylum-be-b.herokuapp.com/cases/fiscalSummary', {
+          // mock URL, can be simply replaced by `${Real_Production_URL}/summary` in prod!
+          params: {
+            from: years[0],
+            to: years[1],
+            office: office,
+          },
+        })
+        .then(result => {
+          stateSettingCallback(view, office, test_data); // <-- `test_data` here can be simply replaced by `result.data` in prod!
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    }
+  }
   const clearQuery = (view, office) => {
     dispatch(resetVisualizationQuery(view, office));
   };
-
   return (
     <div
       className="map-wrapper-container"
@@ -108,11 +121,7 @@ function GraphWrapper(props) {
       }}
     >
       <ScrollToTopOnMount />
-      {loading ? (
-        <div>Loading data...</div>
-      ) : (
-        map_to_render
-      )}
+      {map_to_render}
       <div
         className="user-input-sidebar-container"
         style={{
@@ -128,21 +137,8 @@ function GraphWrapper(props) {
           view={view}
           office={office}
           clearQuery={clearQuery}
-          updateStateWithNewData={(years, view, office, stateSettingCallback) => {
-            // Updated state with new data based on year limits
-          }}
+          updateStateWithNewData={updateStateWithNewData}
         />
-        {view === 'asylumData' && data.length > 0 && (
-          <Plot
-            data={data}
-            layout={{
-              title: 'Line Graph',
-              xaxis: { title: 'X-axis' },
-              yaxis: { title: 'Y-axis' },
-            }}
-            style={{ width: '100%', height: '100%' }}
-          />
-        )}
       </div>
     </div>
   );
