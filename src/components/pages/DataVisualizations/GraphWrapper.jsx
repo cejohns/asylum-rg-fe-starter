@@ -15,6 +15,7 @@ import { colors } from '../../../styles/data_vis_colors';
 import ScrollToTopOnMount from '../../../utils/scrollToTopOnMount';
 
 const { background_color } = colors;
+const prodURL = 'https://hrf-asylum-be-b.herokuapp.com/cases';
 
 function GraphWrapper(props) {
   const { set_view, dispatch } = props;
@@ -50,65 +51,37 @@ function GraphWrapper(props) {
         break;
     }
   }
-  function updateStateWithNewData(years, view, office, stateSettingCallback) {
-    /*
-          _                                                                             _
-        |                                                                                 |
-        |   Example request for once the `/summary` endpoint is up and running:           |
-        |                                                                                 |
-        |     `${url}/summary?to=2022&from=2015&office=ZLA`                               |
-        |                                                                                 |
-        |     so in axios we will say:                                                    |
-        |                                                                                 |     
-        |       axios.get(`${url}/summary`, {                                             |
-        |         params: {                                                               |
-        |           from: <year_start>,                                                   |
-        |           to: <year_end>,                                                       |
-        |           office: <office>,       [ <-- this one is optional! when    ]         |
-        |         },                        [ querying by `all offices` there's ]         |
-        |       })                          [ no `office` param in the query    ]         |
-        |                                                                                 |
-          _                                                                             _
-                                   -- Mack 
-    
-    */
 
+  async function updateStateWithNewData(years, view, office, stateSettingCallback) {
     if (office === 'all' || !office) {
-      axios
-        .get('https://hrf-asylum-be-b.herokuapp.com/cases/citizenshipSummary', {
-          // mock URL, can be simply replaced by `${Real_Production_URL}/summary` in prod!
-          params: {
-            from: years[0],
-            to: years[1],
-          },
-        })
-        .then(result => {
-          stateSettingCallback(view, office, test_data); // <-- `test_data` here can be simply replaced by `result.data` in prod!
-        })
-        .catch(err => {
-          console.error(err);
-        });
+      const fiscal = await axios.get(`${prodURL}/fiscalSummary`, {
+        params: { from: years[0], to: years[1] },
+      });
+
+      const citizenship = await axios.get(`${prodURL}/citizenshipSummary`, {
+        params: { from: years[0], to: years[1] },
+      });
+
+      const newData = { ...fiscal.data, citizenshipResults: citizenship.data };
+      stateSettingCallback(view, office, [newData]);
     } else {
-      axios
-        .get('https://hrf-asylum-be-b.herokuapp.com/cases/fiscalSummary', {
-          // mock URL, can be simply replaced by `${Real_Production_URL}/summary` in prod!
-          params: {
-            from: years[0],
-            to: years[1],
-            office: office,
-          },
-        })
-        .then(result => {
-          stateSettingCallback(view, office, test_data); // <-- `test_data` here can be simply replaced by `result.data` in prod!
-        })
-        .catch(err => {
-          console.error(err);
-        });
+      const fiscal = await axios.get(`${prodURL}/fiscalSummary`, {
+        params: { from: years[0], to: years[1], office: office },
+      });
+
+      const citizenship = await axios.get(`${prodURL}/citizenshipSummary`, {
+        params: { from: years[0], to: years[1], office: office },
+      });
+
+      const newData = { ...fiscal.data, citizenshipResults: citizenship.data };
+      stateSettingCallback(view, office, [newData]);
     }
   }
+
   const clearQuery = (view, office) => {
     dispatch(resetVisualizationQuery(view, office));
   };
+
   return (
     <div
       className="map-wrapper-container"
